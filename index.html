@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fractal Tree</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { 
+      background: #0a0a0f; 
+      display: flex; 
+      justify-content: center; 
+      align-items: center; 
+      min-height: 100vh;
+      overflow: hidden;
+    }
+    canvas { display: block; }
+  </style>
+</head>
+<body>
+<script>
+let maxDepth = 10;
+let branchAngle;
+let windOffset = 0;
+
+function setup() {
+  createCanvas(windowWidth, windowHeight);
+  angleMode(RADIANS);
+  strokeCap(ROUND);
+}
+
+function draw() {
+  background(10, 10, 15);
+  
+  // Animated angle using sin(millis())
+  branchAngle = sin(millis() * 0.001) * 0.3 + 0.4;
+  
+  // Wind effect
+  windOffset = sin(millis() * 0.0005) * 0.05;
+  
+  // Start tree from bottom
+  translate(width / 2, height);
+  
+  // Draw trunk
+  let trunkLen = height * 0.22;
+  drawBranch(trunkLen, 0);
+}
+
+function drawBranch(len, depth) {
+  if (depth > maxDepth || len < 4) return;
+  
+  // Color interpolation: brown → green
+  let brown = color(139, 90, 43);
+  let green = color(34, 139, 34);
+  let t = depth / maxDepth;
+  let col = lerpColor(brown, green, t);
+  
+  // Branch gets thinner
+  let thickness = map(depth, 0, maxDepth, 12, 1);
+  strokeWeight(thickness);
+  stroke(col);
+  
+  // Draw branch
+  line(0, 0, 0, -len);
+  
+  // Move to end of branch
+  translate(0, -len);
+  
+  // Calculate angles with animation
+  let angle = branchAngle + windOffset * (depth / maxDepth);
+  
+  // Right branch
+  push();
+  rotate(angle);
+  drawBranch(len * 0.67, depth + 1);
+  pop();
+  
+  // Left branch
+  push();
+  rotate(-angle);
+  drawBranch(len * 0.67, depth + 1);
+  pop();
+  
+  // Occasional middle branch for more natural look
+  if (depth < 6 && depth % 2 === 0) {
+    push();
+    rotate(windOffset * 0.5);
+    drawBranch(len * 0.5, depth + 1);
+    pop();
+  }
+  
+  // Move back
+  translate(0, len);
+}
+
+function windowResized() {
+  resizeCanvas(windowWidth, windowHeight);
+}
+</script>
+</body>
+</html>

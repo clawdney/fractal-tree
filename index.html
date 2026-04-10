@@ -21,720 +21,650 @@
       position: absolute;
       top: 20px;
       display: flex;
-      gap: 10px;
+      gap: 8px;
       z-index: 100;
       flex-wrap: wrap;
       justify-content: center;
-      max-width: 90vw;
+      max-width: 95vw;
     }
     .nav button {
-      padding: 10px 18px;
-      font-size: 14px;
+      padding: 8px 14px;
+      font-size: 13px;
       background: rgba(255,255,255,0.1);
       color: #fff;
       border: 1px solid rgba(255,255,255,0.2);
-      border-radius: 20px;
+      border-radius: 16px;
       cursor: pointer;
       transition: all 0.3s;
     }
     .nav button:hover { background: rgba(255,255,255,0.2); }
     .nav button.active { background: #4ade80; color: #000; border-color: #4ade80; }
-    .title {
+    .controls {
       position: absolute;
       bottom: 20px;
-      color: rgba(255,255,255,0.5);
-      font-size: 14px;
+      color: rgba(255,255,255,0.4);
+      font-size: 12px;
     }
     canvas { display: block; }
   </style>
 </head>
 <body>
   <div class="nav" id="nav"></div>
-  <div class="title" id="title"></div>
+  <div class="controls" id="controls">Press 1-9, 0 for modes</div>
   <div id="canvasContainer"></div>
 
 <script>
-const fractals = [
-  { name: '🔥 Fire Tree', id: 'fire' },
-  { name: '❄️ Snowflake', id: 'snowflake' },
-  { name: '🌊 Coral', id: 'coral' },
-  { name: '🧠 Neural', id: 'neural' },
-  { name: '🍄 Mushroom', id: 'mushroom' },
-  { name: '⚡ Lightning', id: 'lightning' },
-  { name: '🌵 Cactus', id: 'cactus' },
-  { name: '💎 Crystal', id: 'crystal' },
-  { name: '🌻 Sunflower', id: 'sunflower' },
-  { name: '🕸️ Web', id: 'web' },
-  { name: '🌲 Classic Tree', id: 'tree' },
-  { name: '💬 ChatGPT Tree', id: 'chatgpt' }
-];
+const modeNames = ["", "Fire Tree", "Snowflake", "Ocean Coral", "Neural Network", "Mushroom Cloud", "Lightning", "Desert Cactus", "Crystal Growth", "Sunflower", "Spider Web"];
 
-let currentFractal = 0;
+let mode = 1;
 let particles = [];
 let pulses = [];
-let time = 0;
+let lightningSeeds = [];
+let coralTime = 0;
+let currentName = "";
 
 function setup() {
   let canvas = createCanvas(windowWidth, windowHeight);
   canvas.parent('canvasContainer');
-  angleMode(DEGREES);
+  angleMode(RADIANS);
   strokeCap(ROUND);
-  
+  textFont('monospace');
   createNav();
-  updateTitle();
+  resetMode();
 }
 
 function createNav() {
   const nav = document.getElementById('nav');
-  fractals.forEach((f, i) => {
+  for (let i = 1; i <= 10; i++) {
     let btn = document.createElement('button');
-    btn.textContent = f.name;
-    btn.onclick = () => { currentFractal = i; updateNav(); resetFractal(); };
+    btn.textContent = i === 10 ? "0 " + modeNames[i] : i + " " + modeNames[i];
+    btn.onclick = () => { mode = i; resetMode(); updateNav(); };
     btn.id = 'btn-' + i;
     nav.appendChild(btn);
-  });
+  }
   updateNav();
 }
 
 function updateNav() {
-  fractals.forEach((_, i) => {
-    document.getElementById('btn-' + i).classList.toggle('active', i === currentFractal);
-  });
+  for (let i = 1; i <= 10; i++) {
+    document.getElementById('btn-' + i).classList.toggle('active', i === mode);
+  }
+  document.getElementById('controls').textContent = `Mode ${mode}: ${modeNames[mode]} | Keys: 1-9, 0`;
 }
 
-function updateTitle() {
-  document.getElementById('title').textContent = 'Fractal ' + (currentFractal + 1) + ' / ' + fractals.length;
+function keyPressed() {
+  if (key >= '1' && key <= '9') {
+    mode = int(key);
+    resetMode();
+    updateNav();
+  } else if (key === '0') {
+    mode = 10;
+    resetMode();
+    updateNav();
+  }
 }
 
-function resetFractal() {
+function resetMode() {
   particles = [];
   pulses = [];
-  updateTitle();
+  lightningSeeds = [];
+  coralTime = 0;
+  currentName = modeNames[mode];
+
+  if (mode === 6) {
+    for (let i = 0; i < 4; i++) {
+      lightningSeeds.push(random(1000));
+    }
+  }
 }
 
 function draw() {
-  time += 1;
-  
-  switch(fractals[currentFractal].id) {
-    case 'fire': drawFire(); break;
-    case 'snowflake': drawSnowflake(); break;
-    case 'coral': drawCoral(); break;
-    case 'neural': drawNeural(); break;
-    case 'mushroom': drawMushroom(); break;
-    case 'lightning': drawLightning(); break;
-    case 'cactus': drawCactus(); break;
-    case 'crystal': drawCrystal(); break;
-    case 'sunflower': drawSunflower(); break;
-    case 'web': drawWeb(); break;
-    case 'tree': drawTree(); break;
-    case 'chatgpt': drawChatGPT(); break;
+  backgroundForMode();
+
+  switch (mode) {
+    case 1: drawFireTree(); break;
+    case 2: drawSnowflake(); break;
+    case 3: drawOceanCoral(); break;
+    case 4: drawNeuralNetwork(); break;
+    case 5: drawMushroomCloud(); break;
+    case 6: drawLightning(); break;
+    case 7: drawDesertCactus(); break;
+    case 8: drawCrystalGrowth(); break;
+    case 9: drawSunflower(); break;
+    case 10: drawSpiderWeb(); break;
+  }
+
+  updateParticles();
+  updatePulses();
+}
+
+function backgroundForMode() {
+  switch (mode) {
+    case 1: background(12, 8, 6); break;
+    case 2: background(8, 18, 40); break;
+    case 3: background(6, 30, 36); break;
+    case 4: background(10, 8, 20); break;
+    case 5: background(20, 10, 24); break;
+    case 6: background(8, 12, 20); break;
+    case 7: background(245, 220, 155); break;
+    case 8: background(10, 10, 18); break;
+    case 9: background(35, 60, 22); break;
+    case 10: background(12, 14, 24); break;
   }
 }
 
-// ═══════════════════════════════════════════════════════════
-// 1. FIRE TREE
-// ═══════════════════════════════════════════════════════════
-function drawFire() {
-  background(10, 5, 0);
-  
-  let angle = sin(time * 0.5) * 8 + 25;
-  
-  translate(width/2, height);
-  drawFireBranch(height * 0.25, 0, angle);
-  
-  // Particles
-  if (frameCount % 3 === 0) {
+/* ========================= 1. FIRE TREE ========================= */
+function drawFireTree() {
+  push();
+  translate(width / 2, height - 20);
+  let a = PI / 5 + sin(millis() * 0.002) * 0.18;
+  fireBranch(120, 12, 0, a);
+  pop();
+}
+
+function fireBranch(len, thickness, depth, angle) {
+  if (depth > 8 || len < 8) return;
+
+  let flicker = map(noise(depth * 10, frameCount * 0.05), 0, 1, -25, 25);
+  stroke(255, 100 + depth * 10 + flicker, 20 + depth * 5, 230);
+  strokeWeight(thickness);
+  line(0, 0, 0, -len);
+
+  if (random() < 0.12) {
+    let px = 0;
+    let py = -len;
     particles.push({
-      x: width/2 + random(-20, 20),
-      y: height * 0.7,
-      vx: random(-1, 1),
-      vy: random(-3, -1),
-      life: 255,
-      size: random(3, 8)
+      x: screenX(px, py),
+      y: screenY(px, py),
+      vx: random(-0.8, 0.8),
+      vy: random(-2.2, -0.5),
+      life: 60,
+      type: "fire"
     });
   }
-  
-  for (let p of particles) {
-    p.x += p.vx;
-    p.y += p.vy;
-    p.life -= 4;
-    noStroke();
-    fill(255, random(100, 200), 0, p.life);
-    ellipse(p.x, p.y, p.size);
-  }
-  particles = particles.filter(p => p.life > 0);
-}
 
-function drawFireBranch(len, depth, angle) {
-  if (depth > 12 || len < 5) return;
-  
-  let flicker = random(-5, 5);
-  let r = map(depth, 0, 12, 255, 200);
-  let g = map(depth, 0, 12, 150, 30);
-  let b = map(depth, 0, 12, 0, 0);
-  
-  stroke(r, g, b, 200);
-  strokeWeight(map(depth, 0, 12, 10, 1));
-  line(0, 0, 0, -len);
-  
   translate(0, -len);
-  
+
   push();
-  rotate(angle + flicker);
-  drawFireBranch(len * 0.7, depth + 1, angle);
+  rotate(angle + random(-0.08, 0.08));
+  fireBranch(len * 0.72, thickness * 0.74, depth + 1, angle);
   pop();
-  
+
   push();
-  rotate(-angle + flicker);
-  drawFireBranch(len * 0.7, depth + 1, angle);
+  rotate(-angle + random(-0.08, 0.08));
+  fireBranch(len * 0.72, thickness * 0.74, depth + 1, angle);
   pop();
+
+  if (depth > 2 && random() < 0.35) {
+    push();
+    rotate(random(-0.4, 0.4));
+    fireBranch(len * 0.5, thickness * 0.6, depth + 1, angle * 0.8);
+    pop();
+  }
 }
 
-// ═══════════════════════════════════════════════════════════
-// 2. SNOWFLAKE
-// ═══════════════════════════════════════════════════════════
+/* ========================= 2. SNOWFLAKE ========================= */
 function drawSnowflake() {
-  background(10, 15, 30);
-  
-  translate(width/2, height/2);
-  
+  push();
+  translate(width / 2, height / 2);
+  rotate(frameCount * 0.002);
   for (let i = 0; i < 6; i++) {
     push();
-    rotate(i * 60);
-    drawSnowflakeBranch(height * 0.4, 0);
+    rotate((TWO_PI / 6) * i);
+    snowBranch(140, 4, 0);
     pop();
   }
-  
-  // Glow center
-  for (let i = 0; i < 50; i++) {
-    let a = random(360);
-    let r = random(30);
-    fill(255, 255, 255, random(50, 150));
-    noStroke();
-    ellipse(cos(a) * r, sin(a) * r, random(1, 3));
-  }
+  pop();
 }
 
-function drawSnowflakeBranch(len, depth) {
-  if (depth > 6 || len < 10) return;
-  
-  stroke(200, 220, 255, map(depth, 0, 6, 255, 100));
-  strokeWeight(map(depth, 0, 6, 4, 0.5));
-  
+function snowBranch(len, weight, depth) {
+  if (depth > 4 || len < 10) return;
+
+  stroke(180, 220, 255, 240);
+  strokeWeight(weight);
   line(0, 0, 0, -len);
-  translate(0, -len);
-  
-  push();
-  rotate(60);
-  drawSnowflakeBranch(len * 0.55, depth + 1);
-  pop();
-  
-  push();
-  rotate(-60);
-  drawSnowflakeBranch(len * 0.55, depth + 1);
-  pop();
-  
-  if (depth < 4) {
+
+  for (let t = 0.35; t < 0.9; t += 0.22) {
+    let y = -len * t;
     push();
-    rotate(30);
-    line(0, 0, len * 0.3, 0);
+    translate(0, y);
+    push();
+    rotate(PI / 4);
+    line(0, 0, 0, -len * 0.22);
     pop();
     push();
-    rotate(-30);
-    line(0, 0, len * 0.3, 0);
+    rotate(-PI / 4);
+    line(0, 0, 0, -len * 0.22);
+    pop();
     pop();
   }
-}
 
-// ═══════════════════════════════════════════════════════════
-// 3. CORAL
-// ═══════════════════════════════════════════════════════════
-function drawCoral() {
-  background(0, 20, 30);
-  
-  let sway = sin(time * 0.02) * 5;
-  
-  translate(width/2, height);
-  drawCoralBranch(height * 0.35, 0, 30 + sway);
-  
-  // Bubbles
-  for (let i = 0; i < 3; i++) {
-    let x = width/2 + random(-100, 100);
-    let y = height * 0.3 + random(100);
-    fill(100, 200, 255, 50);
-    noStroke();
-    ellipse(x, y, random(5, 15));
-  }
-}
-
-function drawCoralBranch(len, depth, angle) {
-  if (depth > 8 || len < 8) return;
-  
-  let r = map(depth, 0, 8, 180, 50);
-  let g = map(depth, 0, 8, 80, 150);
-  let b = map(depth, 0, 8, 80, 120);
-  
-  stroke(r, g, b);
-  strokeWeight(map(depth, 0, 8, 12, 2));
-  line(0, 0, 0, -len);
-  
   translate(0, -len);
-  
-  for (let i = 0; i < 3; i++) {
+  push();
+  rotate(PI / 6);
+  snowBranch(len * 0.55, weight * 0.75, depth + 1);
+  pop();
+  push();
+  rotate(-PI / 6);
+  snowBranch(len * 0.55, weight * 0.75, depth + 1);
+  pop();
+}
+
+/* ========================= 3. OCEAN CORAL ========================= */
+function drawOceanCoral() {
+  coralTime += 0.01;
+
+  push();
+  translate(width / 2, height - 40);
+  for (let i = -2; i <= 2; i++) {
     push();
-    rotate(angle + sin(time + depth + i) * 10);
-    drawCoralBranch(len * 0.65, depth + 1, angle * 0.8);
+    translate(i * 80, 0);
+    coralBranch(100 + i * 5, 10, 0, i * 20);
     pop();
   }
-}
-
-// ═══════════════════════════════════════════════════════════
-// 4. NEURAL NETWORK
-// ═══════════════════════════════════════════════════════════
-function drawNeural() {
-  background(5, 5, 15);
-  
-  translate(width/2, height);
-  
-  // Update pulses
-  if (frameCount % 60 === 0) {
-    pulses.push({ depth: 0, life: 255 });
-  }
-  
-  let pulseDepths = pulses.map(p => p.depth);
-  
-  drawNeuralBranch(height * 0.3, 0, 30);
-  
-  // Nodes glow
-  for (let i = 0; i < 20; i++) {
-    let a = random(360);
-    let r = random(height * 0.4);
-    let isPulse = pulseDepths.some(d => abs(d - r/height*10) < 1);
-    fill(isPulse ? '#0ff' : '#404080', isPulse ? 255 : 100);
-    noStroke();
-    ellipse(cos(a) * r, sin(a) * r, random(2, 6));
-  }
-  
-  pulses = pulses.filter(p => {
-    p.depth += 0.1;
-    p.life -= 3;
-    return p.life > 0;
-  });
-}
-
-function drawNeuralBranch(len, depth, angle) {
-  if (depth > 8 || len < 8) return;
-  
-  // Branch glows when pulse passes
-  let isPulsing = pulses.some(p => abs(p.depth - depth) < 0.5);
-  let glow = isPulsing ? color(0, 255, 255) : color(80, 80, 150);
-  
-  stroke(glow);
-  strokeWeight(map(depth, 0, 8, 8, 1));
-  line(0, 0, 0, -len);
-  
-  translate(0, -len);
-  
-  push();
-  rotate(angle);
-  drawNeuralBranch(len * 0.7, depth + 1, angle * 0.9);
   pop();
-  
-  push();
-  rotate(-angle);
-  drawNeuralBranch(len * 0.7, depth + 1, angle * 0.9);
-  pop();
-}
 
-// ═══════════════════════════════════════════════════════════
-// 5. MUSHROOM
-// ═══════════════════════════════════════════════════════════
-function drawMushroom() {
-  background(5, 3, 15);
-  
-  translate(width/2, height);
-  
-  // Stem
-  stroke(230, 220, 200);
-  strokeWeight(25);
-  line(0, 0, 0, -height * 0.15);
-  
-  // Cap
-  translate(0, -height * 0.15);
-  fill(180, 50, 100);
-  noStroke();
-  arc(0, 0, height * 0.35, height * 0.25, 180, 360);
-  
-  // Gills
-  stroke(200, 150, 150, 100);
-  strokeWeight(1);
-  for (let i = 0; i < 360; i += 15) {
-    let x = cos(i) * height * 0.12;
-    let y = sin(i) * height * 0.08;
-    line(0, 0, x, y);
-  }
-  
-  // Spores floating up
-  if (frameCount % 5 === 0) {
+  if (frameCount % 6 === 0) {
     particles.push({
-      x: width/2 + random(-50, 50),
-      y: height * 0.85,
-      vy: random(-2, -0.5),
-      life: 255,
-      size: random(1, 3)
+      x: random(width * 0.25, width * 0.75),
+      y: random(height * 0.45, height * 0.95),
+      vx: random(-0.2, 0.2),
+      vy: random(-1.2, -0.4),
+      life: 100,
+      type: "bubble"
     });
   }
-  
-  for (let p of particles) {
-    p.y += p.vy;
-    p.x += sin(p.y * 0.05 + time * 0.1) * 0.5;
-    p.life -= 2;
-    fill(255, 200, 220, p.life);
-    noStroke();
-    ellipse(p.x, p.y, p.size);
-  }
-  particles = particles.filter(p => p.life > 0);
 }
 
-// ═══════════════════════════════════════════════════════════
-// 6. LIGHTNING
-// ═══════════════════════════════════════════════════════════
-function drawLightning() {
-  background(5, 5, 20);
-  
-  translate(width/2, 0);
-  
-  // Flash effect
-  if (frameCount % 120 < 5) {
-    background(50, 50, 80);
-  }
-  
-  stroke(200, 240, 255);
-  strokeWeight(3);
-  
-  let segments = [];
-  drawLightningBranch(0, height * 0.7, -90, 25, segments);
-  
-  // Glow
-  for (let s of segments) {
-    stroke(0, 150, 255, 50);
-    strokeWeight(s.w * 3);
-    line(s.x1, s.y1, s.x2, s.y2);
-    stroke(200, 240, 255);
-    strokeWeight(s.w);
-    line(s.x1, s.y1, s.x2, s.y2);
-  }
-}
+function coralBranch(len, thickness, depth, seedOffset) {
+  if (depth > 7 || len < 10) return;
 
-function drawLightningBranch(x1, y1, angle, len, segments) {
-  if (len < 20) return;
-  
-  let x2 = x1 + cos(angle) * len;
-  let y2 = y1 + sin(angle) * len;
-  let w = map(len, 20, 300, 1, 4);
-  
-  segments.push({x1, y1, x2, y2, w});
-  
-  translate(x2 - x1, y2 - y1);
-  
-  let offset1 = random(20, 50) * (random() > 0.5 ? 1 : -1);
-  let offset2 = random(20, 50) * (random() > 0.5 ? 1 : -1);
-  
-  push();
-  rotate(offset1);
-  drawLightningBranch(0, 0, angle + offset1, len * 0.7, segments);
-  pop();
-  
-  push();
-  rotate(offset2);
-  drawLightningBranch(0, 0, angle + offset2, len * 0.7, segments);
-  pop();
-}
-
-// ═══════════════════════════════════════════════════════════
-// 7. CACTUS
-// ═══════════════════════════════════════════════════════════
-function drawCactus() {
-  background(20, 25, 20);
-  
-  translate(width/2, height);
-  
-  // Main trunk
-  stroke(50, 140, 50);
-  strokeWeight(40);
-  line(0, 0, 0, -height * 0.5);
-  
-  // Arms
-  translate(0, -height * 0.35);
-  
-  // Left arm
-  push();
-  rotate(90);
-  stroke(50, 140, 50);
-  strokeWeight(25);
-  line(0, 0, 0, -height * 0.2);
-  
-  // Left arm top
-  translate(0, -height * 0.2);
-  strokeWeight(20);
-  line(0, 0, -height * 0.1, 0);
-  pop();
-  
-  // Right arm
-  push();
-  rotate(-90);
-  stroke(50, 140, 50);
-  strokeWeight(30);
-  line(0, 0, 0, -height * 0.25);
-  
-  translate(0, -height * 0.25);
-  strokeWeight(20);
-  line(0, 0, height * 0.12, 0);
-  pop();
-  
-  // Spines
-  for (let i = 0; i < 50; i++) {
-    let a = random(360);
-    let r = random(15, 25);
-    let x = width/2 + cos(a) * r;
-    let y = height - height * 0.5 + sin(a) * r * 2;
-    stroke(255, 255, 200, 150);
-    strokeWeight(1);
-    point(x, y);
-  }
-  
-  // Flower on top
-  fill(255, 100, 150);
-  noStroke();
-  for (let i = 0; i < 8; i++) {
-    let a = i * 45;
-    ellipse(cos(a) * 15, -height * 0.5 + sin(a) * 15, 10, 8);
-  }
-  fill(255, 200, 50);
-  ellipse(0, -height * 0.5, 12, 12);
-}
-
-// ═══════════════════════════════════════════════════════════
-// 8. CRYSTAL
-// ═══════════════════════════════════════════════════════════
-function drawCrystal() {
-  background(5, 5, 15);
-  
-  translate(width/2, height);
-  
-  for (let i = 0; i < 6; i++) {
-    push();
-    rotate(i * 60);
-    drawCrystalBranch(height * 0.4, 0, 15);
-    pop();
-  }
-  
-  // Rainbow facets
-  for (let i = 0; i < 30; i++) {
-    let hue = (i * 15 + time) % 360;
-    colorMode(HSB);
-    fill(hue, 80, 80, 50);
-    noStroke();
-    let a = random(360);
-    let r = random(50, height * 0.4);
-    ellipse(cos(a) * r, sin(a) * r, random(3, 8));
-    colorMode(RGB);
-  }
-}
-
-function drawCrystalBranch(len, depth, angle) {
-  if (depth > 6 || len < 15) return;
-  
-  let hue = map(depth, 0, 6, 0, 280);
-  colorMode(HSB);
-  stroke(hue, 90, 90);
-  colorMode(RGB);
-  strokeWeight(map(depth, 0, 6, 5, 1));
+  let sway = map(noise(seedOffset, depth * 0.3, coralTime), 0, 1, -0.35, 0.35);
+  stroke(70, 220 - depth * 10, 220, 220);
+  strokeWeight(thickness);
   line(0, 0, 0, -len);
-  
+
   translate(0, -len);
-  
+
+  push();
+  rotate(0.35 + sway);
+  coralBranch(len * 0.75, thickness * 0.75, depth + 1, seedOffset + 10);
+  pop();
+
+  push();
+  rotate(-0.35 + sway);
+  coralBranch(len * 0.75, thickness * 0.75, depth + 1, seedOffset + 20);
+  pop();
+
+  if (random() < 0.2) {
+    fill(120, 255, 240, 160);
+    noStroke();
+    ellipse(0, 0, 6 + depth, 6 + depth);
+  }
+}
+
+/* ========================= 4. NEURAL NETWORK ========================= */
+function drawNeuralNetwork() {
+  push();
+  translate(width / 2, height - 50);
+  let a = PI / 5 + sin(millis() * 0.0016) * 0.12;
+  neuralBranch(115, 8, 0, a, createVector(width / 2, height - 50));
+  pop();
+
+  if (frameCount % 25 === 0) {
+    pulses.push({ progress: 0, speed: random(0.01, 0.02) });
+  }
+}
+
+function neuralBranch(len, thickness, depth, angle, worldPos) {
+  if (depth > 7 || len < 12) return;
+
+  let x2 = worldPos.x;
+  let y2 = worldPos.y - len;
+
+  stroke(100, 120, 255, 180);
+  strokeWeight(thickness);
+  line(0, 0, 0, -len);
+
+  fill(180, 220, 255);
+  noStroke();
+  ellipse(0, 0, 6 + thickness * 0.25);
+  ellipse(0, -len, 6 + thickness * 0.22);
+
+  if (random() < 0.12) {
+    particles.push({
+      x: x2, y: y2,
+      vx: random(-0.3, 0.3), vy: random(-0.3, 0.3),
+      life: 40, type: "glow"
+    });
+  }
+
+  translate(0, -len);
+
   push();
   rotate(angle);
-  drawCrystalBranch(len * 0.65, depth + 1, angle * 0.9);
+  neuralBranch(len * 0.72, thickness * 0.76, depth + 1, angle, createVector(x2, y2));
   pop();
-  
+
   push();
   rotate(-angle);
-  drawCrystalBranch(len * 0.65, depth + 1, angle * 0.9);
+  neuralBranch(len * 0.72, thickness * 0.76, depth + 1, angle, createVector(x2, y2));
   pop();
-  
-  // Crystal formations
-  if (depth < 3) {
-    stroke(200);
-    strokeWeight(0.5);
-    line(0, 0, 10, 0);
+}
+
+function updatePulses() {
+  if (mode !== 4) return;
+
+  push();
+  translate(width / 2, height - 50);
+  let a = PI / 5 + sin(millis() * 0.0016) * 0.12;
+  for (let p of pulses) {
+    drawPulseTree(115, 0, a, p.progress);
+    p.progress += p.speed;
+  }
+  pulses = pulses.filter(p => p.progress <= 1.05);
+  pop();
+}
+
+function drawPulseTree(len, depth, angle, progress) {
+  if (depth > 7 || len < 12) return;
+
+  let triggerMin = depth * 0.12;
+  let triggerMax = triggerMin + 0.14;
+  if (progress >= triggerMin && progress <= triggerMax) {
+    noStroke();
+    fill(255, 255, 255, 220);
+    ellipse(0, -len * map(progress, triggerMin, triggerMax, 0, 1), 8, 8);
+  }
+
+  translate(0, -len);
+
+  push();
+  rotate(angle);
+  drawPulseTree(len * 0.72, depth + 1, angle, progress);
+  pop();
+
+  push();
+  rotate(-angle);
+  drawPulseTree(len * 0.72, depth + 1, angle, progress);
+  pop();
+}
+
+/* ========================= 5. MUSHROOM CLOUD ========================= */
+function drawMushroomCloud() {
+  push();
+  translate(width / 2, height - 80);
+
+  stroke(180, 100, 220, 220);
+  strokeWeight(18);
+  line(0, 0, 0, -160);
+
+  noStroke();
+  for (let y = -220; y <= -110; y += 20) {
+    for (let x = -120; x <= 120; x += 20) {
+      let d = dist(x, y, 0, -180);
+      if (d < 110 + noise(x * 0.02, y * 0.02, frameCount * 0.01) * 30) {
+        fill(180 + x * 0.2, 90 + d * 0.3, 220, 120);
+        ellipse(x, y, 28 + noise(x, y) * 10);
+      }
+    }
+  }
+
+  for (let y = -130; y <= -50; y += 18) {
+    let w = map(y, -130, -50, 60, 25);
+    fill(165, 90, 205, 90);
+    ellipse(0, y, w, 26);
+  }
+
+  pop();
+
+  if (frameCount % 4 === 0) {
+    particles.push({
+      x: width / 2 + random(-100, 100),
+      y: height - 320 + random(-30, 40),
+      vx: random(-0.4, 0.4),
+      vy: random(-1.4, -0.5),
+      life: 100,
+      type: "spore"
+    });
   }
 }
 
-// ═══════════════════════════════════════════════════════════
-// 9. SUNFLOWER
-// ═══════════════════════════════════════════════════════════
+/* ========================= 6. LIGHTNING ========================= */
+function drawLightning() {
+  if (frameCount % 16 === 1) {
+    background(180, 220, 255);
+  }
+
+  for (let i = 0; i < lightningSeeds.length; i++) {
+    randomSeed(floor(lightningSeeds[i] + frameCount * 0.6));
+    stroke(220, 255, 255, 220);
+    strokeWeight(3);
+    lightningBranch(width * (0.2 + i * 0.2), 0, PI / 2, 9, 16);
+  }
+}
+
+function lightningBranch(x, y, angle, depth, len) {
+  if (depth <= 0 || y > height) return;
+
+  let nx = x + cos(angle + random(-0.55, 0.55)) * len;
+  let ny = y + sin(angle + random(-0.35, 0.35)) * len * 1.8;
+
+  line(x, y, nx, ny);
+
+  if (random() < 0.18) {
+    stroke(120, 240, 255, 90);
+    strokeWeight(8);
+    line(x, y, nx, ny);
+    stroke(220, 255, 255, 220);
+    strokeWeight(3);
+  }
+
+  lightningBranch(nx, ny, angle + random(-0.35, 0.35), depth - 1, len * 0.95);
+
+  if (random() < 0.32) {
+    lightningBranch(nx, ny, angle + random(-1.1, 1.1), depth - 2, len * 0.7);
+  }
+}
+
+/* ========================= 7. DESERT CACTUS ========================= */
+function drawDesertCactus() {
+  push();
+  translate(width / 2, height - 30);
+  stroke(50, 120, 50);
+  fill(60, 145, 65);
+  cactusSegment(0, 0, 34, 220);
+
+  drawArm(-70, -110, -1, 120, 24);
+  drawArm(75, -140, 1, 100, 22);
+  drawArm(-30, -190, -1, 70, 18);
+
+  pop();
+  drawGround();
+}
+
+function cactusSegment(x, y, w, h) {
+  noStroke();
+  fill(68, 150, 72);
+  rectMode(CENTER);
+  rect(x, y - h / 2, w, h, w / 2);
+  stroke(230, 240, 200, 120);
+  strokeWeight(1);
+  for (let yy = y - h + 15; yy < y - 10; yy += 16) {
+    line(x - 4, yy, x - 10, yy - 4);
+    line(x + 4, yy + 4, x + 10, yy);
+  }
+}
+
+function drawArm(x, y, dir, h, w) {
+  push();
+  translate(x, y);
+  rotate(dir * 0.45);
+  cactusSegment(0, 0, w, h);
+  pop();
+}
+
+function drawGround() {
+  noStroke();
+  fill(210, 180, 110);
+  rect(0, height - 45, width, 45);
+}
+
+/* ========================= 8. CRYSTAL GROWTH ========================= */
+function drawCrystalGrowth() {
+  push();
+  translate(width / 2, height / 2 + 180);
+  crystalBranch(0, 0, -120, 8, 0);
+  pop();
+}
+
+function crystalBranch(x1, y1, len, depth, hueShift) {
+  if (depth <= 0 || abs(len) < 10) return;
+
+  let x2 = x1;
+  let y2 = y1 + len;
+
+  let c = color(
+    120 + 120 * sin((frameCount * 0.02) + hueShift),
+    120 + 120 * sin((frameCount * 0.02) + hueShift + 2),
+    120 + 120 * sin((frameCount * 0.02) + hueShift + 4),
+    210
+  );
+
+  stroke(c);
+  strokeWeight(map(depth, 1, 8, 1, 5));
+  fill(red(c), green(c), blue(c), 60);
+
+  beginShape();
+  vertex(x1 - 8, y1);
+  vertex(x1 + 8, y1);
+  vertex(x2 + 5, y2);
+  vertex(x2 - 5, y2);
+  endShape(CLOSE);
+
+  push();
+  translate(x2, y2);
+
+  if (depth > 1) {
+    let spread = PI / 6;
+    rotate(spread);
+    crystalBranch(0, 0, len * 0.75, depth - 1, hueShift + 0.8);
+    rotate(-2 * spread);
+    crystalBranch(0, 0, len * 0.75, depth - 1, hueShift + 1.5);
+    rotate(spread);
+    crystalBranch(0, 0, len * 0.85, depth - 1, hueShift + 0.2);
+  }
+
+  pop();
+}
+
+/* ========================= 9. SUNFLOWER ========================= */
 function drawSunflower() {
-  background(10, 20, 10);
-  
-  translate(width/2, height/2);
-  
-  // Seeds - Fibonacci spiral
-  let phi = 137.5;
-  let maxRadius = min(width, height) * 0.45;
-  
-  for (let i = 0; i < 800; i++) {
-    let r = 4 * sqrt(i);
-    let a = i * phi;
-    if (r > maxRadius) break;
-    
+  push();
+  translate(width / 2, height / 2);
+
+  let n = 420;
+  let golden = PI * (3 - sqrt(5));
+  noStroke();
+
+  for (let i = 0; i < n; i++) {
+    let r = 7 * sqrt(i);
+    let a = i * golden + frameCount * 0.002;
     let x = cos(a) * r;
     let y = sin(a) * r;
-    
-    let brightness = map(r, 0, maxRadius, 100, 30);
-    fill(40, 25, 10, brightness);
-    noStroke();
-    ellipse(x, y, 4, 5);
+
+    let t = map(i, 0, n, 0, 1);
+    fill(100 + 155 * t, 70 + 110 * t, 10, 230);
+    ellipse(x, y, 7, 7);
   }
-  
-  // Petals
-  translate(0, 0);
-  for (let i = 0; i < 34; i++) {
+
+  for (let i = 0; i < 36; i++) {
+    let a = (TWO_PI / 36) * i + sin(frameCount * 0.02) * 0.02;
+    let x = cos(a) * 160;
+    let y = sin(a) * 160;
     push();
-    rotate(i * 360 / 34);
-    fill(255, 200, 0);
-    noStroke();
-    ellipse(0, -maxRadius * 0.75, 20, 40);
+    translate(x, y);
+    rotate(a + PI / 2);
+    fill(255, 190, 20, 220);
+    ellipse(0, 0, 38, 85);
     pop();
   }
-  
-  // Center glow
-  fill(60, 40, 10);
-  ellipse(0, 0, 30, 30);
+
+  fill(90, 55, 20);
+  ellipse(0, 0, 170, 170);
+  pop();
 }
 
-// ═══════════════════════════════════════════════════════════
-// 10. SPIDER WEB
-// ═══════════════════════════════════════════════════════════
-function drawWeb() {
-  background(15, 15, 25);
-  
-  translate(width/2, height/2);
-  
-  // Radial lines
-  stroke(200, 200, 220, 80);
-  strokeWeight(1);
-  for (let i = 0; i < 24; i++) {
-    let a = i * 15;
-    line(0, 0, cos(a) * 400, sin(a) * 400);
+/* ========================= 10. SPIDER WEB ========================= */
+function drawSpiderWeb() {
+  push();
+  translate(width / 2, height / 2);
+
+  stroke(220, 230, 255, 170);
+  strokeWeight(1.4);
+
+  let spokes = 16;
+  let rings = 11;
+  let maxR = 250 + sin(frameCount * 0.01) * 8;
+
+  for (let i = 0; i < spokes; i++) {
+    let a = (TWO_PI / spokes) * i;
+    line(0, 0, cos(a) * maxR, sin(a) * maxR);
   }
-  
-  // Spiral threads
-  for (let r = 30; r < 400; r += 25) {
-    stroke(200, 200, 220, map(r, 30, 400, 150, 50));
-    noFill();
+
+  noFill();
+  for (let r = 25; r <= maxR; r += maxR / rings) {
     beginShape();
-    for (let a = 0; a < 360 * 3; a += 5) {
-      let radius = r + a * 0.3;
-      if (radius > 400) break;
-      vertex(cos(a) * radius, sin(a) * radius);
+    for (let i = 0; i <= spokes; i++) {
+      let a = (TWO_PI / spokes) * i;
+      let wobble = map(noise(i * 0.2, r * 0.01, frameCount * 0.01), 0, 1, -8, 8);
+      vertex(cos(a) * (r + wobble), sin(a) * (r + wobble));
     }
     endShape();
   }
-  
-  // Dewdrops
-  for (let i = 0; i < 40; i++) {
-    let a = random(360);
-    let r = random(50, 380);
-    let x = cos(a) * r;
-    let y = sin(a) * r;
-    
-    // Glow
-    fill(200, 220, 255, 30);
-    ellipse(x, y, 8, 8);
-    // Drop
-    fill(255, 255, 255, 200);
-    ellipse(x, y, 4, 4);
+
+  for (let i = 0; i < 20; i++) {
+    let a = i * 0.83;
+    let r = 40 + i * 10;
+    fill(180, 220, 255, 170);
+    noStroke();
+    ellipse(cos(a) * r, sin(a) * r, 4 + sin(frameCount * 0.03 + i) * 1.5);
   }
-}
 
-// ═══════════════════════════════════════════════════════════
-// 11. CLASSIC TREE
-// ═══════════════════════════════════════════════════════════
-function drawTree() {
-  background(10, 10, 15);
-  
-  let angle = sin(time * 0.05) * 10 + 30;
-  let wind = sin(time * 0.1) * 5;
-  
-  translate(width/2, height);
-  drawTreeBranch(height * 0.28, 0, angle + wind);
-}
-
-function drawTreeBranch(len, depth, angle) {
-  if (depth > 10 || len < 8) return;
-  
-  let brown = color(139, 90, 43);
-  let green = color(34, 139, 34);
-  let t = depth / 10;
-  let col = lerpColor(brown, green, t);
-  
-  stroke(col);
-  strokeWeight(map(depth, 0, 10, 12, 1));
-  line(0, 0, 0, -len);
-  translate(0, -len);
-  
-  push();
-  rotate(angle);
-  drawTreeBranch(len * 0.7, depth + 1, angle);
-  pop();
-  
-  push();
-  rotate(-angle);
-  drawTreeBranch(len * 0.7, depth + 1, angle);
   pop();
 }
 
-// ═══════════════════════════════════════════════════════════
-// 12. CHATGPT TREE
-// ═══════════════════════════════════════════════════════════
-function drawChatGPT() {
-  background(245, 248, 250);
-  
-  let angle = PI / 6 + sin(time * 0.0015) * 0.25;
-  
-  translate(width/2, height);
-  drawChatGPTTree(120, 10, 0, angle);
-}
+/* ========================= PARTICLES ========================= */
+function updateParticles() {
+  for (let p of particles) {
+    p.x += p.vx;
+    p.y += p.vy;
+    p.life--;
 
-function drawChatGPTTree(len, thickness, depth, angle) {
-  if (depth > 9 || len < 8) return;
-  
-  let t = map(depth, 0, 9, 0, 1);
-  let r = lerp(100, 40, t);
-  let g = lerp(60, 140, t);
-  let b = lerp(20, 60, t);
-  
-  stroke(r, g, b);
-  strokeWeight(thickness);
-  line(0, 0, 0, -len);
-  
-  translate(0, -len);
-  
-  push();
-  rotate(angle);
-  drawChatGPTTree(len * 0.72, thickness * 0.72, depth + 1, angle);
-  pop();
-  
-  push();
-  rotate(-angle);
-  drawChatGPTTree(len * 0.72, thickness * 0.72, depth + 1, angle);
-  pop();
+    if (p.type === "fire") {
+      noStroke();
+      fill(255, 160, 40, map(p.life, 0, 60, 0, 180));
+      ellipse(p.x, p.y, 5, 5);
+    } else if (p.type === "bubble") {
+      noFill();
+      stroke(180, 255, 255, map(p.life, 0, 100, 0, 160));
+      strokeWeight(1.2);
+      ellipse(p.x, p.y, 8, 8);
+    } else if (p.type === "spore") {
+      noStroke();
+      fill(220, 140, 255, map(p.life, 0, 100, 0, 140));
+      ellipse(p.x, p.y, 5, 5);
+    } else if (p.type === "glow") {
+      noStroke();
+      fill(180, 220, 255, map(p.life, 0, 40, 0, 120));
+      ellipse(p.x, p.y, 8, 8);
+    }
+  }
+
+  particles = particles.filter(p => p.life > 0);
 }
 
 function windowResized() {
-  resetFractal();
   resizeCanvas(windowWidth, windowHeight);
 }
 </script>

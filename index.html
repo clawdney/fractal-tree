@@ -28,17 +28,43 @@
       max-width: 95vw;
     }
     .nav button {
-      padding: 8px 14px;
-      font-size: 13px;
-      background: rgba(255,255,255,0.1);
+      padding: 14px 20px;
+      font-size: 16px;
+      background: rgba(255,255,255,0.15);
       color: #fff;
-      border: 1px solid rgba(255,255,255,0.2);
-      border-radius: 16px;
+      border: 1px solid rgba(255,255,255,0.3);
+      border-radius: 25px;
       cursor: pointer;
       transition: all 0.3s;
+      min-width: 80px;
     }
     .nav button:hover { background: rgba(255,255,255,0.2); }
     .nav button.active { background: #4ade80; color: #000; border-color: #4ade80; }
+    .nav-arrows {
+      position: absolute;
+      bottom: 30px;
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      z-index: 100;
+    }
+    .arrow-btn {
+      padding: 12px 24px;
+      font-size: 16px;
+      background: rgba(74, 222, 128, 0.3);
+      color: #fff;
+      border: 2px solid #4ade80;
+      border-radius: 25px;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+    .arrow-btn:active { background: #4ade80; color: #000; }
+    #modeDisplay {
+      font-size: 18px;
+      color: #fff;
+      min-width: 80px;
+      text-align: center;
+    }
     .controls {
       position: absolute;
       bottom: 20px;
@@ -50,7 +76,12 @@
 </head>
 <body>
   <div class="nav" id="nav"></div>
-  <div class="controls" id="controls">Press 1-9, 0 for modes</div>
+  <div class="nav-arrows">
+    <button onclick="prevMode()" class="arrow-btn">◀ Prev</button>
+    <span id="modeDisplay">1 / 10</span>
+    <button onclick="nextMode()" class="arrow-btn">Next ▶</button>
+  </div>
+  <div class="controls" id="controls">Press keys or use arrows</div>
   <div id="canvasContainer"></div>
 
 <script>
@@ -89,7 +120,20 @@ function updateNav() {
   for (let i = 1; i <= 10; i++) {
     document.getElementById('btn-' + i).classList.toggle('active', i === mode);
   }
-  document.getElementById('controls').textContent = `Mode ${mode}: ${modeNames[mode]} | Keys: 1-9, 0`;
+  document.getElementById('modeDisplay').textContent = mode + ' / ' + modeNames.length;
+  document.getElementById('controls').textContent = modeNames[mode];
+}
+
+function nextMode() {
+  mode = mode >= 10 ? 1 : mode + 1;
+  resetMode();
+  updateNav();
+}
+
+function prevMode() {
+  mode = mode <= 1 ? 10 : mode - 1;
+  resetMode();
+  updateNav();
 }
 
 function keyPressed() {

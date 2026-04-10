@@ -218,8 +218,8 @@ function fireBranch(len, thickness, depth, angle) {
     let px = 0;
     let py = -len;
     particles.push({
-      x: screenX(px, py),
-      y: screenY(px, py),
+      x: 0,
+      y: -len,
       vx: random(-0.8, 0.8),
       vy: random(-2.2, -0.5),
       life: 60,
